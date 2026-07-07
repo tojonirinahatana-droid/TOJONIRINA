@@ -22,13 +22,11 @@ jobs:
           pip install flet
 
       - name: Build APK
-        # Cette commande construit l'APK. 
-        # Assurez-vous d'avoir un fichier main.py à la racine.
-        run: flet build apk
+        # Manamboatra ny APK ho an'ny tetikasa TOJONIRINA
+        run: flet build apk --name "TOJONIRINA" --project-id "com.tojonirina.app"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: mon-apk-application
-          # Flet génère généralement l'APK dans ce dossier
+          name: TOJONIRINA-APK
           path: build/apk/app-release.apk
