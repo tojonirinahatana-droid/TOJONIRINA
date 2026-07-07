@@ -8,20 +8,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1. Fakana ny kaody avy amin'ny repo
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # 2. Fametrahana ny version an'ny Python
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.11'
 
-      - name: Install Flet
-        run: pip install flet
+      # 3. Fametrahana ireo fitaovana ilaina (Flet)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flet
 
+      # 4. Fananganana ny APK
       - name: Build APK
         run: flet build apk --name "TOJONIRINA" --project-id "com.tojonirina.app"
 
+      # 5. Fampidirana ny vokatra (APK) ho azo sintonina
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
