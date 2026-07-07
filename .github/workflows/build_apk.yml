@@ -16,19 +16,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Installation des dépendances système nécessaires pour Android
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 libnotify-dev libgconf-2-4
-
-      - name: Install Flet
+      - name: Install Flet and dependencies
         run: |
           pip install --upgrade pip
           pip install flet
+          flet --version
+
+      - name: Check files
+        run: ls -R  # Ity dia hanampy antsika hahita raha ao amin'ny toerana marina ny main.py
 
       - name: Build APK
-        # On ajoute --verbose pour voir plus de détails dans les logs en cas d'erreur
+        # Manampy "--force" sy ny "verbose" mba hahitana ny error marina
         run: flet build apk --name "TOJONIRINA" --project-id "com.tojonirina.app" --verbose
 
       - name: Upload APK
