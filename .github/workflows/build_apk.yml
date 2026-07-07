@@ -1,0 +1,30 @@
+name: Build Flet APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Flet
+        run: pip install flet
+
+      - name: Build APK
+        run: flet build apk --project my-new-app
+        # Ity flet build apk ity dia hanao ny zava-drehetra ho anao
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-new-app-apk
+          path: build/apk/app-release.apk
