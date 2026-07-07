@@ -16,18 +16,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Flet and dependencies
+      # Ity no zava-dehibe: manomana ny tontolo iainana Android/Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Flet
         run: |
           pip install --upgrade pip
           pip install flet
-          flet --version
-
-      - name: Check files
-        run: ls -R  # Ity dia hanampy antsika hahita raha ao amin'ny toerana marina ny main.py
 
       - name: Build APK
-        # Manampy "--force" sy ny "verbose" mba hahitana ny error marina
-        run: flet build apk --name "TOJONIRINA" --project-id "com.tojonirina.app" --verbose
+        # Manampy ny fananganana ny fitaovana ilaina
+        run: |
+          flet build apk --name "TOJONIRINA" --project-id "com.tojonirina.app" --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
