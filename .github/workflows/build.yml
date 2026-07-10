@@ -1,8 +1,41 @@
-name: Build Flet APK
+name: Build TOJONIRINA APK
 
 on:
   push:
     branches:
-      - principal
-      - main
       - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Flet
+        run: pip install flet
+
+      - name: Build APK
+        run: flet build apk
+
+      # Ity dingana ity no tena manan-danja mba hahazoana an'ilay bokotra download
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TOJONIRINA-app-release
+          path: build/apk/*.apk
