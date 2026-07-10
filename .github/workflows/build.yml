@@ -1,22 +1,8 @@
-name: Build TOJONIRINA APK
-on: [push]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Setup Java JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Install Flet
-        run: pip install flet
-      - name: Build APK
-        run: flet build apk
+name: Build Flet APK
+
+on:
+  push:
+    branches:
+      - principal
+      - main
+      - master

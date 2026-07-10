@@ -1,221 +1,240 @@
 import flet as ft
-import sqlite3
+import json
+import os
+from datetime import datetime
 
-def init_db():
-    conn = sqlite3.connect("fitantanana_bola.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS fifanakalozana (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            antony TEXT,
-            vola REAL,
-            karazana TEXT,
-            sokajy TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+DATA_FILE = "data_bola.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {"solde_initial": 0.0, "solde_actuel": 0.0, "history": []}
+    return {"solde_initial": 0.0, "solde_actuel": 0.0, "history": []}
+
+def save_data(solde_init, solde_act, history):
+    data = {"solde_initial": solde_init, "solde_actuel": solde_act, "history": history}
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f)
 
 def main(page: ft.Page):
-    page.title = "TOJONIRINA - Fitantanana Bola"
-    page.theme_mode = ft.ThemeMode.DARK
-    page.scroll = ft.ScrollMode.AUTO
+    page.title = "TOJONIRINA - Gestion Financière"
+    page.window_width = 460
+    page.window_height = 850
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-
-    init_db()
-
-    # Variables ho an'ny karazana voafidy (Par défaut: Miditra)
-    # Ny fampiasana dikan-teny tsotra toy izao dia misoroka ny hadisoana rehetra
-    karazana_iditra = ft.Text("Karazana voafidy : ENTREE (Vola Miditra)", color=ft.Colors.GREEN_ACCENT, weight=ft.FontWeight.BOLD)
-    karazana_state = "Miditra"
-    sokajy_state = "PLUS"
-
-    # Saha fampidirana tsotra
-    antony_input = ft.TextField(label="Antony mivantana", width=300, border_radius=10)
-    vola_input = ft.TextField(label="Isan'ny vola (Ariary)", width=300, border_radius=10, keyboard_type=ft.KeyboardType.NUMBER)
+    page.scroll = ft.ScrollMode.AUTO
     
-    # Safidy ho an'ny SORTIE (Désignation)
-    sokajy_dropdown = ft.Dropdown(
-        width=300,
-        visible=False,
+    # --- CHANGEMENT EN MODE SOMBRE ---
+    page.theme_mode = ft.ThemeMode.DARK
+
+    # Chargement des données
+    user_data = load_data()
+    page.data = {
+        "solde_initial": user_data.get("solde_initial", 0.0),
+        "solde_actuel": user_data.get("solde_actuel", 0.0),
+        "history": user_data.get("history", [])
+    }
+
+    # --- COMPOSANTS GRAPHIQUES ---
+    lohateny = ft.Text("Gestion Financière", size=28, weight=ft.FontWeight.BOLD, color="#60A5FA") # Bleu clair pour le mode sombre
+    
+    # Textes du Dashboard
+    lbl_brut = ft.Text("0 Ar", size=16, weight=ft.FontWeight.BOLD, color="#60A5FA")
+    lbl_entree = ft.Text("0 Ar", size=16, weight=ft.FontWeight.BOLD, color="#4ADE80") # Vert clair
+    lbl_sortie = ft.Text("0 Ar", size=16, weight=ft.FontWeight.BOLD, color="#F87171") # Rouge clair
+    lbl_solde_actuel = ft.Text("Solde Actuel : 0 Ar", size=22, weight=ft.FontWeight.BOLD, color="white")
+
+    # --- DASHBOARD SOMBRE ---
+    dashboard = ft.Container(
+        content=ft.Column([
+            ft.Container(content=lbl_solde_actuel, alignment=ft.Alignment(0, 0), padding=5),
+            ft.Divider(color="#4B5563"),
+            ft.Row([
+                ft.Column([ft.Text("INITIAL (BRUT)", size=11, color="#9CA3AF", weight=ft.FontWeight.W_500), lbl_brut], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                ft.VerticalDivider(color="#4B5563"),
+                ft.Column([ft.Text("TOTAL ENTRÉES", size=11, color="#9CA3AF", weight=ft.FontWeight.W_500), lbl_entree], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                ft.VerticalDivider(color="#4B5563"),
+                ft.Column([ft.Text("TOTAL SORTIES", size=11, color="#9CA3AF", weight=ft.FontWeight.W_500), lbl_sortie], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            ], alignment=ft.MainAxisAlignment.SPACE_EVENLY, height=50)
+        ]),
+        bgcolor="#1F2937", # Fond gris foncé (Anthracite)
+        border_radius=15,
+        padding=15,
+        border=ft.Border(
+            top=ft.BorderSide(1, "#374151"),
+            bottom=ft.BorderSide(1, "#374151"),
+            left=ft.BorderSide(1, "#374151"),
+            right=ft.BorderSide(1, "#374151")
+        ),
+        width=400,
+        margin=10
+    )
+    
+    # --- 1. SECTION MODIFIER SOLDE INITIAL ---
+    txt_initial = ft.TextField(
+        label="Nouveau Montant Brut (Ar)", 
+        value=str(page.data["solde_initial"]) if page.data["solde_initial"] > 0 else "",
+        keyboard_type=ft.KeyboardType.NUMBER, 
+        width=230,
+        dense=True
+    )
+    
+    def definir_solde_initial(e):
+        if not txt_initial.value:
+            fampandrenesana.value = "Veuillez entrer le montant brut initial !"
+            fampandrenesana.color = "#F87171"
+            page.update()
+            return
+        try:
+            vola_brut = float(txt_initial.value)
+        except ValueError:
+            fampandrenesana.value = "Le montant doit être un nombre valide !"
+            fampandrenesana.color = "#F87171"
+            page.update()
+            return
+        
+        mouvement_avant = page.data["solde_actuel"] - page.data["solde_initial"]
+        page.data["solde_initial"] = vola_brut
+        page.data["solde_actuel"] = vola_brut + mouvement_avant
+        
+        save_data(page.data["solde_initial"], page.data["solde_actuel"], page.data["history"])
+        fampandrenesana.value = "Solde initial mis à jour !"
+        fampandrenesana.color = "#60A5FA"
+        charger_historique()
+
+    bokotra_initial = ft.ElevatedButton("MODIFIER BRUT", on_click=definir_solde_initial, bgcolor="#3B82F6", color="white")
+    row_initial = ft.Row([txt_initial, bokotra_initial], alignment=ft.MainAxisAlignment.CENTER)
+
+    # --- 2. SECTION TRANSACTIONS ---
+    txt_motif = ft.Dropdown(
+        label="Motif / Description",
+        hint_text="Choisissez un motif...",
+        width=380,
         options=[
-            ft.dropdown.Option("CREDIT"),
-            ft.dropdown.Option("FRAIS"),
-            ft.dropdown.Option("GOUTTER"),
-            ft.dropdown.Option("DEVOIR"),
-            ft.dropdown.Option("SANTE"),
-            ft.dropdown.Option("RIZ"),
-            ft.dropdown.Option("NOM"),
-            ft.dropdown.Option("PLUS"),
+            ft.dropdown.Option("Frais"),
+            ft.dropdown.Option("Goûter"),
+            ft.dropdown.Option("Salaire"),
+            ft.dropdown.Option("Achat"),
+            ft.dropdown.Option("Divers"),
         ]
     )
-    sokajy_label = ft.Text("Sokajy (Désignation SORTIE) :", visible=False)
-
-    # Rehefa tsindrina ny bokotra ENTREE
-    def set_entree(e):
-        nonlocal karazana_state
-        karazana_state = "Miditra"
-        karazana_iditra.value = "Karazana voafidy : ENTREE (Vola Miditra)"
-        karazana_iditra.color = ft.Colors.GREEN_ACCENT
-        sokajy_dropdown.visible = False
-        sokajy_label.visible = False
-        page.update()
-
-    # Rehefa tsindrina ny bokotra SORTIE
-    def set_sortie(e):
-        nonlocal karazana_state
-        karazana_state = "Mivoaka"
-        karazana_iditra.value = "Karazana voafidy : SORTIE (Vola Mivoaka)"
-        karazana_iditra.color = ft.Colors.RED_ACCENT
-        sokajy_dropdown.visible = True
-        sokajy_label.visible = True
-        page.update()
-
-    # Bokotra roa hifidianana ny Karazana (Tsy mampiasa Radio intsony!)
-    btn_entree = ft.ElevatedButton(text="ENTREE", on_click=set_entree)
-    btn_base_sortie = ft.ElevatedButton(text="SORTIE", on_click=set_sortie)
-
-    # Ireo soratra eo amin'ny Dashboard
-    entree_text = ft.Text("Total ENTREE : 0 Ar", size=16, color=ft.Colors.GREEN_ACCENT_400, weight=ft.FontWeight.W_500)
-    sortie_text = ft.Text("Total SORTIE : 0 Ar", size=16, color=ft.Colors.RED_ACCENT_400, weight=ft.FontWeight.W_500)
-    vola_final_text = ft.Text("Vola Sisa (FINALE) : 0 Ar", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_ACCENT)
     
-    lisitra_column = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=200, width=350)
+    txt_montant = ft.TextField(label="Montant (Ar)", keyboard_type=ft.KeyboardType.NUMBER, width=380)
+    fampandrenesana = ft.Text("", size=14, color="#F87171")
 
-    def kajy_solde_sy_lisitra():
-        lisitra_column.controls.clear()
-        conn = sqlite3.connect("fitantanana_bola.db")
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("SELECT antony, vola, karazana, sokajy FROM fifanakalozana ORDER BY id DESC")
-        except sqlite3.OperationalError:
-            cursor.execute("ALTER TABLE fifanakalozana ADD COLUMN sokajy TEXT")
-            cursor.execute("SELECT antony, vola, karazana, sokajy FROM fifanakalozana ORDER BY id DESC")
+    # --- 3. SECTION TABLEAU ---
+    tableau_transactions = ft.DataTable(
+        columns=[
+            ft.DataColumn(ft.Text("Date", weight=ft.FontWeight.BOLD, color="#9CA3AF")),
+            ft.DataColumn(ft.Text("Motif", weight=ft.FontWeight.BOLD, color="#9CA3AF")),
+            ft.DataColumn(ft.Text("Montant", weight=ft.FontWeight.BOLD, color="#9CA3AF")),
+            ft.DataColumn(ft.Text("Type", weight=ft.FontWeight.BOLD, color="#9CA3AF")),
+        ],
+        rows=[],
+        column_spacing=25
+    )
+
+    zone_tableau = ft.Column(controls=[tableau_transactions], scroll=ft.ScrollMode.AUTO, height=200, width=400)
+
+    def charger_historique():
+        t_entree = 0.0
+        t_sortie = 0.0
+        for t in page.data["history"]:
+            if t["type"] == "entree":
+                t_entree += t["montant"]
+            elif t["type"] == "sortie":
+                t_sortie += t["montant"]
+
+        lbl_brut.value = f"{page.data['solde_initial']} Ar"
+        lbl_entree.value = f"{t_entree} Ar"
+        lbl_sortie.value = f"{t_sortie} Ar"
+        lbl_solde_actuel.value = f"Solde Actuel : {page.data['solde_actuel']} Ar"
+        lbl_solde_actuel.color = "#4ADE80" if page.data['solde_actuel'] >= 0 else "#F87171"
+
+        tableau_transactions.rows.clear()
+        for t in reversed(page.data["history"]):
+            loko = "#4ADE80" if t["type"] == "entree" else "#F87171"
+            marika = "+" if t["type"] == "entree" else "-"
+            date_trans = t.get("date", "")
             
-        transactions = cursor.fetchall()
-        
-        total_miditra = 0
-        total_mivoaka = 0
-        
-        for t in transactions:
-            antony, vola, karazana, sokajy = t
-            sokajy_aseho = f" [{sokajy}]" if (karazana == "Mivoaka" and sokajy) else ""
-            
-            if karazana == "Miditra":
-                total_miditra += vola
-                loko = ft.Colors.GREEN_400
-                marika = "+"
-            else:
-                total_mivoaka += vola
-                loko = ft.Colors.RED_400
-                marika = "-"
-                
-            lisitra_column.controls.add(
-                ft.Container(
-                    content=ft.Row(
-                        [
-                            ft.Text(f"{antony}{sokajy_aseho}", weight=ft.FontWeight.BOLD, expand=True),
-                            ft.Text(f"{marika} {vola:,} Ar", color=loko, weight=ft.FontWeight.BOLD)
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-                    ),
-                    padding=10,
-                    border_radius=8,
-                    bgcolor=ft.Colors.SURFACE_CONTAINER
+            tableau_transactions.rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(date_trans, size=12, color="white")),
+                        ft.DataCell(ft.Text(t["motif"], size=12, color="white")),
+                        ft.DataCell(ft.Text(f"{t['montant']} Ar", color=loko, weight=ft.FontWeight.BOLD, size=12)),
+                        ft.DataCell(ft.Text(f"{marika} {t['type'].upper()}", color=loko, size=11)),
+                    ]
                 )
             )
-            
-        entree_text.value = f"Total ENTREE : +{total_miditra:,} Ar"
-        sortie_text.value = f"Total SORTIE : -{total_mivoaka:,} Ar"
-        
-        vola_sisa = total_miditra - total_mivoaka
-        vola_final_text.value = f"Vola Sisa (FINALE) : {vola_sisa:,} Ar"
-        
-        if vola_sisa >= 0:
-            vola_final_text.color = ft.Colors.BLUE_ACCENT
-        else:
-            vola_final_text.color = ft.Colors.RED_400
-            
-        conn.close()
         page.update()
 
-    def ampidiro_bola(e):
-        if not antony_input.value or not vola_input.value:
+    def gerer_transaction(is_entree):
+        if not txt_motif.value or not txt_montant.value:
+            fampandrenesana.value = "Veuillez choisir un Motif et remplir le Montant !"
+            fampandrenesana.color = "#F87171"
+            page.update()
             return
-        
         try:
-            vola_nampidirina = float(vola_input.value)
+            valeur_vola = float(txt_montant.value)
         except ValueError:
+            fampandrenesana.value = "Le montant doit être un nombre valide !"
+            fampandrenesana.color = "#F87171"
+            page.update()
             return
-            
-        sokajy_fandaniana = sokajy_dropdown.value if karazana_state == "Mivoaka" else "PLUS"
-        if not sokajy_fandaniana:
-            sokajy_fandaniana = "PLUS"
-            
-        conn = sqlite3.connect("fitantanana_bola.db")
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO fifanakalozana (antony, vola, karazana, sokajy) VALUES (?, ?, ?, ?)",
-            (antony_input.value, vola_nampidirina, karazana_state, sokajy_fandaniana)
-        )
-        conn.commit()
-        conn.close()
+
+        if is_entree:
+            page.data["solde_actuel"] += valeur_vola
+        else:
+            page.data["solde_actuel"] -= valeur_vola
+
+        date_aujourdhui = datetime.now().strftime("%d/%m/%Y")
+
+        page.data["history"].append({
+            "date": date_aujourdhui,
+            "motif": txt_motif.value,
+            "montant": valeur_vola,
+            "type": "entree" if is_entree else "sortie"
+        })
+
+        save_data(page.data["solde_initial"], page.data["solde_actuel"], page.data["history"])
         
-        antony_input.value = ""
-        vola_input.value = ""
-        
-        kajy_solde_sy_lisitra()
+        charger_historique()
+        fampandrenesana.value = f"Succès : '{txt_motif.value}' enregistré !"
+        fampandrenesana.color = "#60A5FA"
+        txt_motif.value = None
+        txt_montant.value = ""
+        page.update()
 
-    # Ny bokotra lehibe handefasana ny kajy rehetra
-    bokotra_hampiditra = ft.ElevatedButton(
-        text="Tahiry & Kajy",
-        on_click=ampidiro_bola
-    )
+    bokotra_entree = ft.ElevatedButton("ENTRÉE", on_click=lambda e: gerer_transaction(is_entree=True), bgcolor="#10B981", color="white", width=170)
+    bokotra_sortie = ft.ElevatedButton("SORTIE", on_click=lambda e: gerer_transaction(is_entree=False), bgcolor="#EF4444", color="white", width=170)
 
-    kajy_solde_sy_lisitra()
-
+    # --- ENREGISTREMENT SUR LA PAGE ---
     page.add(
-        ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text("TOJONIRINA - Fitantanana Vola", size=24, weight=ft.FontWeight.BOLD),
-                    ft.Divider(height=10, color=ft.Colors.TRANSPARENT),
-                    
-                    ft.Container(
-                        content=ft.Column([
-                            entree_text,
-                            sortie_text,
-                            ft.Divider(height=5, color=ft.Colors.WHITE24),
-                            vola_final_text
-                        ]),
-                        padding=15,
-                        border_radius=10,
-                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                        width=350
-                    ),
-                    
-                    ft.Divider(height=15),
-                    antony_input,
-                    ft.Text("Safidio ny karazana :", weight=ft.FontWeight.BOLD),
-                    ft.Row([btn_entree, btn_base_sortie], alignment=ft.MainAxisAlignment.CENTER),
-                    karazana_iditra,
-                    sokajy_label,
-                    sokajy_dropdown,  
-                    vola_input,
-                    bokotra_hampiditra,
-                    ft.Divider(height=15),
-                    ft.Text("Ireo fidirana sy fivoahana farany :", size=16, weight=ft.FontWeight.W_500),
-                    lisitra_column
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=10
-            ),
-            padding=20,
-            alignment=ft.alignment.center
-        )
+        ft.Container(content=lohateny, margin=5),
+        
+        dashboard,
+        fampandrenesana,
+        ft.Divider(color="#374151"),
+        
+        ft.Text("Modifier le Solde Initial (Montant Brut) :", weight=ft.FontWeight.BOLD, color="#60A5FA", size=13),
+        row_initial,
+        ft.Divider(color="#374151"),
+        
+        ft.Text("Nouvelle Transaction :", weight=ft.FontWeight.BOLD, color="#60A5FA", size=13),
+        txt_motif,
+        txt_montant,
+        ft.Container(margin=2),
+        ft.Row([bokotra_entree, bokotra_sortie], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Divider(color="#374151"),
+        
+        ft.Text("Historique des transactions :", weight=ft.FontWeight.BOLD, size=15, color="white"),
+        zone_tableau
     )
 
-if __name__ == "__main__":
-    ft.app(target=main)
+    charger_historique()
+
+ft.app(target=main)
