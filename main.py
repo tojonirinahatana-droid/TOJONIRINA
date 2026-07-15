@@ -237,4 +237,4 @@ def main(page: ft.Page):
 
     charger_historique()
 
-ft.app(target=main)
+ftft.app(target=main, assets_dir="assets")
