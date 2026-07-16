@@ -22,7 +22,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet  # <- On installe directement flet ici, plus besoin de requirements.txt !
+          pip install flet
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -31,7 +31,7 @@ jobs:
 
       - name: Build APK with Flet
         run: |
-          flet build apk --no-web-renderer
+          flet build apk # <--- Correction ici : on a retiré l'argument qui bloquait !
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
