@@ -1,39 +1,93 @@
-name: Build TOJONIRINA APK
+name: Build Android APK
 
 on:
   push:
     branches:
-      - master
+      - main
+  workflow_dispatch: # Permet de lancer la compilation manuellement depuis GitHub
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout du code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Setup Java JDK
+      - name: Configurer Java (requis par Gradle/Android)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Flet
-        run: |
-          pip install flet
+      - name: Configurer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
 
-      - name: Build APK
-        run: |
-          flet build apk --no-analytics
+      - name: Installer Python et uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 'latest'
 
-      - name: Upload APK Artifact
+      - name: Installer Flet CLI
+        run: |
+          uv pip install --system flet
+
+      - name: Compiler l'APK pour Honor 8X (ARM64)
+        run: |
+          # --android-abi arm64-v8a cible l'architecture de votre téléphone pour un APK plus léger
+          flet build apk --android-abi arm64-v8a --verbose
+
+      - name: Sauvegarder l'APK généré
         uses: actions/upload-artifact@v4
         with:
-          name: TOJONIRINA-app-release
+          name: application-apk-honor8x
           path: build/apk/*.apk
+          retention-days: 7name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Permet de lancer la compilation manuellement depuis GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Configurer Java (requis par Gradle/Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Configurer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Installer Python et uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 'latest'
+
+      - name: Installer Flet CLI
+        run: |
+          uv pip install --system flet
+
+      - name: Compiler l'APK pour Honor 8X (ARM64)
+        run: |
+          # --android-abi arm64-v8a cible l'architecture de votre téléphone pour un APK plus léger
+          flet build apk --android-abi arm64-v8a --verbose
+
+      - name: Sauvegarder l'APK généré
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-apk-honor8x
+          path: build/apk/*.apk
+          retention-days: 7
