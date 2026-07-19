@@ -104,6 +104,7 @@ def main(page: ft.Page):
         fampandrenesana.value = "Solde initial mis à jour !"
         fampandrenesana.color = "#60A5FA"
         charger_historique()
+        page.update()
 
     bokotra_initial = ft.ElevatedButton("MODIFIER BRUT", on_click=definir_solde_initial, bgcolor="#3B82F6", color="white")
     row_initial = ft.Row([txt_initial, bokotra_initial], alignment=ft.MainAxisAlignment.CENTER)
@@ -237,4 +238,5 @@ def main(page: ft.Page):
 
     charger_historique()
 
-ftft.app(target=main, assets_dir="assets")
+# --- CORRECTION DE LA LIGNE CI-DESSOUS ---
+ft.app(target=main, assets_dir="assets")
