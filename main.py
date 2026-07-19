@@ -23,7 +23,6 @@ def save_data(data):
     with open(DATA_FILE, "w") as f: json.dump(data, f)
 
 def main(page: ft.Page):
-    # Anarana niova ho SUIVI FINANCIERE
     page.title = "SUIVI FINANCIERE"
     page.theme_mode = ft.ThemeMode.DARK
     page.vertical_alignment = ft.MainAxisAlignment.START
@@ -85,7 +84,13 @@ def main(page: ft.Page):
                 data["total_sortie"] += val
             data["history"].append({"date": datetime.now().strftime("%d/%m/%Y"), "motif": motif or "N/A", "montant": val, "type": "entree" if is_entree else "sortie"})
             save_data(data)
-            txt_montant.value = ""; txt_motif_perso.value = ""; txt_motif_perso.visible = False; txt_motif.value = None
+            
+            # Fafana ny sanda
+            txt_montant.value = ""
+            txt_motif_perso.value = ""
+            txt_motif_perso.visible = False
+            txt_motif.value = None
+            
             update_ui()
         except: pass
 
@@ -101,7 +106,16 @@ def main(page: ft.Page):
         ], horizontal_alignment="center"), bgcolor="#1F2937", padding=20, border_radius=10, width=380),
         ft.Divider(),
         txt_solde_initial, 
-        ft.ElevatedButton("METTRE À JOUR SOLDE", on_click=lambda e: (data.update({"solde_actuel": float(txt_solde_initial.value or 0), "total_entree": 0.0, "total_sortie": 0.0, "history": []}), save_data(data), update_ui()), bgcolor="blue", color="white"),
+        ft.ElevatedButton(
+            "METTRE À JOUR SOLDE", 
+            on_click=lambda e: (
+                data.update({"solde_actuel": float(txt_solde_initial.value or 0), "total_entree": 0.0, "total_sortie": 0.0, "history": []}),
+                setattr(txt_solde_initial, "value", ""),
+                save_data(data), 
+                update_ui()
+            ), 
+            bgcolor="blue", color="white"
+        ),
         ft.Divider(),
         txt_motif, txt_motif_perso, txt_montant,
         ft.Row([ft.ElevatedButton("ENTRÉE", on_click=lambda e: add_transaction(True), bgcolor="#10B981", color="white", width=160),
